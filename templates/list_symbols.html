@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}List of Symbols{% endblock %}
+
+{% block main %}
+    <h2>Select a Symbol</h2>
+    <ul>
+        {% for country, symbol in symbols.items() %}
+        <li><a href="{{ url_for('list_portfolio', symbol=symbol) }}">{{ country }}: {{ symbol }}</a></li>
+    {% endfor %}
+    </ul>
+{% endblock %}

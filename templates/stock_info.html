@@ -1,0 +1,11 @@
+<!-- ibm.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ ticker }} Financial Data{% endblock %}
+
+{% block main %}
+    <h2>{{ ticker }} Financial Data</h2>
+    <p>High: {{ high }}</p>
+    <p>Current: {{ current }}</p>
+    <!-- Add more financial details as needed -->
+{% endblock %}
