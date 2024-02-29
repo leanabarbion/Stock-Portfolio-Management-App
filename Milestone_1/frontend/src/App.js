@@ -3,3 +3,5 @@ async function logMovies() {
   const movies = await response.json();
   console.log(movies);
 }
+
+export default logMovies;
