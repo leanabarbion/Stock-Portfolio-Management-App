@@ -1,8 +1,15 @@
-import Symbols from "./components/Symbols";
-function App(){
+import React from 'react';
+import StockInfo from './components/StockPortfolio';// Assuming StockInfo is in the same directory
+
+function App() {
   return (
-    <div>
-      <Symbols />
+    <div className="App">
+      <header className="App-header">
+        <h1>React Stock Portfolio</h1>
+      </header>
+      <main>
+        <StockInfo />
+      </main>
     </div>
   );
 }
