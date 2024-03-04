@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import StockPortfolio from "./components/StockPortfolio";
 import StockSymbols from "./components/StockSymbols";
+import SymbolData from "./components/StockData";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App (){
@@ -20,6 +21,7 @@ function App (){
     <Routes>
       <Route path="/" element={<StockSymbols onAddToPortfolio={handleAddToPortfolio}/>} />
       <Route path="/portfolio" element={<StockPortfolio symbols={selectedSymbols}/>} />
+      <Route path="/symbol/:symbol" element={<SymbolData />} /> {/* New route */}
     </Routes>
   </Router>
   );

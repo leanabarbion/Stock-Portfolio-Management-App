@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ListGroup from "react-bootstrap/ListGroup";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
+import { Button, Modal, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 function StockSymbols({ onAddToPortfolio }) {
@@ -9,6 +8,9 @@ function StockSymbols({ onAddToPortfolio }) {
   const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAlert, setShowAlert] = useState(false); // State to control alert visibility
+  const [alertMessage, setAlertMessage] = useState(""); // State to set alert message
 
   useEffect(() => {
     fetch("http://127.0.0.1:5000/symbols")
@@ -18,9 +20,25 @@ function StockSymbols({ onAddToPortfolio }) {
   }, []);
 
   // Adjusted addToPortfolio to navigate
-  const addToPortfolioAndNavigate = (symbol) => {
+  const addToPortfolioAndShowAlert = (symbol) => {
     onAddToPortfolio(symbol); // Use the prop to add symbol to portfolio
-    navigate("/portfolio"); // Navigate to portfolio page
+    setAlertMessage(`"${symbol}" added to portfolio!`); // Set the message
+    setShowAlert(true); // Show the alert
+    setTimeout(() => setShowAlert(false), 3000);
+    // navigate("/portfolio"); // Navigate to portfolio page
+  };
+  const filteredSymbols = symbols.filter((symbol) =>
+    symbol.toUpperCase().includes(searchQuery.toUpperCase())
+  );
+  useEffect(() => {
+    console.log(searchQuery); // See the current search query
+  }, [searchQuery]);
+
+  useEffect(() => {
+    console.log(filteredSymbols); // See the current filtered symbols
+  }, [filteredSymbols]);
+  const viewData = (symbol) => {
+    navigate(`/symbol/${symbol}`); // Navigate to symbol-specific page
   };
 
   const handleClose = () => setShowModal(false);
@@ -29,29 +47,53 @@ function StockSymbols({ onAddToPortfolio }) {
   return (
     <div>
       <h1>Welcome to WealthWise</h1>
-      <ListGroup>
-        {symbols.map((symbol, index) => (
-          <ListGroup.Item
-            key={index}
-            className="d-flex justify-content-between align-items-center"
-          >
-            {symbol}
-            <Button variant="primary" onClick={() => onAddToPortfolio(symbol)}>
+      {showAlert && <Alert variant="success">{alertMessage}</Alert>}
+      <input
+        type="text"
+        placeholder="Search for a symbol..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{
+          marginBottom: "20px",
+          padding: "10px",
+          width: "calc(100% - 20px)",
+        }}
+      />
+
+      {/* "Go to My Portfolio" Button */}
+      <Button
+        variant="info"
+        style={{ position: "fixed", top: "20px", right: "20px" }}
+        onClick={() => navigate("/portfolio")}
+      >
+        My Portfolio
+      </Button>
+      <ListGroup
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto auto",
+          alignItems: "center",
+          gap: "10px",
+        }}
+      >
+        {filteredSymbols.map((symbol, index) => (
+          <React.Fragment key={index}>
+            <div className="symbol">{symbol}</div>
+            <Button
+              variant="primary"
+              onClick={() => addToPortfolioAndShowAlert(symbol)}
+            >
               Add to Portfolio
             </Button>
-          </ListGroup.Item>
+            <Button
+              variant="secondary"
+              onClick={() => navigate(`/symbol/${symbol}`)}
+            >
+              View Data
+            </Button>
+          </React.Fragment>
         ))}
       </ListGroup>
-      {/* Moved "Go to My Portfolio" Button below the ListGroup */}
-      <div style={{ marginTop: "20px" }}>
-        <Button
-          variant="info"
-          style={{ position: "fixed", top: "20px", right: "20px" }}
-          onClick={() => navigate("/portfolio")}
-        >
-          My Portfolio
-        </Button>
-      </div>
 
       {/* Portfolio Modal */}
       <Modal show={showModal} onHide={handleClose}>

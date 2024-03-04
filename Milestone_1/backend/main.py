@@ -5,6 +5,7 @@ import csv
 from flask_cors import CORS, cross_origin
 
 # 93T39LM1F63A0IH9
+# OIELA8JTBV7IHS3C
 app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
@@ -69,6 +70,41 @@ def list_portfolio():
 
     # Return the list of stock data as JSON
     return jsonify(results)
+
+
+@app.route("/data")
+def stock_data():
+    symbol = request.args.get("symbol")
+    if not symbol:
+        return jsonify({"error": "No symbol provided"}), 400
+
+    response = requests.get(
+        f"{CSV_URL}?function=TIME_SERIES_WEEKLY&symbol={symbol}&apikey={YOUR_API_KEY}"
+    )
+
+    if response.status_code != 200:
+        return jsonify({"error": "Failed to fetch data"}), response.status_code
+
+    data = response.json()
+    weekly_time_series = data.get("Weekly Time Series", {})
+
+    # Sort the weekly_time_series dictionary by date (key) in ascending order
+    sorted_dates = sorted(weekly_time_series.items(), key=lambda x: x[0])
+
+    # Now construct the trend_data list with sorted dates
+    trend_data = [
+        {
+            "date": date,
+            "open": values["1. open"],
+            "high": values["2. high"],
+            "low": values["3. low"],
+            "close": values["4. close"],
+            "volume": values["5. volume"],
+        }
+        for date, values in sorted_dates
+    ]
+
+    return jsonify({"symbol": symbol, "trend_data": trend_data})
 
 
 if __name__ == "__main__":
