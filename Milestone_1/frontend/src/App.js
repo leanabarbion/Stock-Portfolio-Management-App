@@ -1,30 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import StockPortfolio from "./components/StockPortfolio";
-import StockSymbols from "./components/StockSymbols";
-import SymbolData from "./components/StockData";
+import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Container } from 'react-bootstrap';
+import StockSymbols from "./components/StockSymbols";
+import SymbolData from './components/StockData';
 
-function App (){
-  const [selectedSymbols, setSelectedSymbols] = useState([]);
-  const handleAddToPortfolio = (symbol) => {
-    setSelectedSymbols(prevSymbols => {
-      // Add the symbol if it's not already in the array
-      if (!prevSymbols.includes(symbol)) {
-        return [...prevSymbols, symbol];
-      }
-      return prevSymbols;
-    });
+function App() {
+  const [selectedSymbol, setSelectedSymbol] = useState(null);
+
+  const handleSelectSymbol = (symbol) => {
+    setSelectedSymbol(symbol);
   };
-  return (
-  <Router>
-    <Routes>
-      <Route path="/" element={<StockSymbols onAddToPortfolio={handleAddToPortfolio}/>} />
-      <Route path="/portfolio" element={<StockPortfolio symbols={selectedSymbols}/>} />
-      <Route path="/symbol/:symbol" element={<SymbolData />} /> {/* New route */}
-    </Routes>
-  </Router>
-  );
 
+  return (
+    <Container className="mt-3">
+      <h1 className="text-center mb-3">WealthWise: Stock Management App</h1>
+      <StockSymbols onSelectSymbol={handleSelectSymbol} />
+      {selectedSymbol && <SymbolData symbol={selectedSymbol} />}
+    </Container>
+  );
 }
+
 export default App;

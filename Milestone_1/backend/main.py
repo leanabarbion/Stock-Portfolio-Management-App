@@ -5,12 +5,11 @@ import csv
 from flask_cors import CORS, cross_origin
 
 # 93T39LM1F63A0IH9
-# OIELA8JTBV7IHS3C
 app = Flask(__name__)
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app)
 
 app.config["CORS_HEADERS"] = "Content-Type"
-YOUR_API_KEY = "demo"
+YOUR_API_KEY = "93T39LM1F63A0IH9"
 
 CSV_URL = "https://www.alphavantage.co/query"
 

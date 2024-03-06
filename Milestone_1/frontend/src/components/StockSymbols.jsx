@@ -1,123 +1,170 @@
 import React, { useState, useEffect } from "react";
-import ListGroup from "react-bootstrap/ListGroup";
-import { Button, Modal, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import {
+  Container,
+  Row,
+  Col,
+  ListGroup,
+  Button,
+  Alert,
+  Card,
+  Form,
+} from "react-bootstrap";
+import SymbolData from "./StockData"; // Adjust the import path as necessary
 
-function StockSymbols({ onAddToPortfolio }) {
+function StockSymbols() {
   const [symbols, setSymbols] = useState([]);
-  const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [portfolioDetails, setPortfolioDetails] = useState({});
+  const [investmentAmounts, setInvestmentAmounts] = useState({});
+  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertSymbol, setAlertSymbol] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAlert, setShowAlert] = useState(false); // State to control alert visibility
-  const [alertMessage, setAlertMessage] = useState(""); // State to set alert message
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/symbols")
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/symbols`)
       .then((response) => response.json())
       .then((data) => setSymbols(data.symbols))
       .catch((error) => console.error("Error fetching symbols:", error));
   }, []);
 
-  // Adjusted addToPortfolio to navigate
-  const addToPortfolioAndShowAlert = (symbol) => {
-    onAddToPortfolio(symbol); // Use the prop to add symbol to portfolio
-    setAlertMessage(`"${symbol}" added to portfolio!`); // Set the message
-    setShowAlert(true); // Show the alert
-    setTimeout(() => setShowAlert(false), 3000);
-    // navigate("/portfolio"); // Navigate to portfolio page
-  };
-  const filteredSymbols = symbols.filter((symbol) =>
-    symbol.toUpperCase().includes(searchQuery.toUpperCase())
-  );
-  useEffect(() => {
-    console.log(searchQuery); // See the current search query
-  }, [searchQuery]);
-
-  useEffect(() => {
-    console.log(filteredSymbols); // See the current filtered symbols
-  }, [filteredSymbols]);
-  const viewData = (symbol) => {
-    navigate(`/symbol/${symbol}`); // Navigate to symbol-specific page
+  const fetchCurrentPrice = (symbol) => {
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/data?symbol=${symbol}`)
+      .then((response) => response.json())
+      .then((data) => {
+        const latestData = data.trend_data[data.trend_data.length - 1] || {};
+        const currentPrice = latestData.close || "N/A";
+        setPortfolioDetails((prevDetails) => ({
+          ...prevDetails,
+          [symbol]: { ...latestData, currentPrice },
+        }));
+      })
+      .catch((error) =>
+        console.error("Error fetching data for symbol:", symbol, error)
+      );
   };
 
-  const handleClose = () => setShowModal(false);
-  const handleShow = () => setShowModal(true);
+  const addToPortfolio = (symbol) => {
+    if (!portfolio.includes(symbol)) {
+      setPortfolio([...portfolio, symbol]);
+      fetchCurrentPrice(symbol);
+      setAlertSymbol(symbol);
+      setShowAlert(true);
+      setTimeout(() => setShowAlert(false), 3000); // Fetch and store the current price
+    }
+  };
+
+  const handleInvestmentChange = (symbol, amount) => {
+    setInvestmentAmounts({ ...investmentAmounts, [symbol]: amount });
+  };
+
+  const viewSymbolData = (symbol) => {
+    setSelectedSymbol(symbol); // Assuming you have local state or method to handle UI changes
+    // Use the passed function to set the selected symbol in App component
+  };
+
+  const calculatePortfolioValue = () => {
+    return portfolio.reduce((total, symbol) => {
+      const amountInvested = parseFloat(investmentAmounts[symbol]) || 0;
+      const stockDetails = portfolioDetails[symbol] || {};
+      const currentPrice = parseFloat(stockDetails.currentPrice) || 0;
+      return total + amountInvested * currentPrice;
+    }, 0);
+  };
+
+  const totalPortfolioValue = calculatePortfolioValue(); // Just return the totalValue if you're calculating total portfolio value
 
   return (
-    <div>
-      <h1>Welcome to WealthWise</h1>
-      {showAlert && <Alert variant="success">{alertMessage}</Alert>}
-      <input
-        type="text"
-        placeholder="Search for a symbol..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        style={{
-          marginBottom: "20px",
-          padding: "10px",
-          width: "calc(100% - 20px)",
-        }}
-      />
-
-      {/* "Go to My Portfolio" Button */}
-      <Button
-        variant="info"
-        style={{ position: "fixed", top: "20px", right: "20px" }}
-        onClick={() => navigate("/portfolio")}
-      >
-        My Portfolio
-      </Button>
-      <ListGroup
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto auto",
-          alignItems: "center",
-          gap: "10px",
-        }}
-      >
-        {filteredSymbols.map((symbol, index) => (
-          <React.Fragment key={index}>
-            <div className="symbol">{symbol}</div>
-            <Button
-              variant="primary"
-              onClick={() => addToPortfolioAndShowAlert(symbol)}
-            >
-              Add to Portfolio
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => navigate(`/symbol/${symbol}`)}
-            >
-              View Data
-            </Button>
-          </React.Fragment>
-        ))}
-      </ListGroup>
-
-      {/* Portfolio Modal */}
-      <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>My Portfolio</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ListGroup>
-            {portfolio.length > 0 ? (
-              portfolio.map((symbol, index) => (
-                <ListGroup.Item key={index}>{symbol}</ListGroup.Item>
-              ))
-            ) : (
-              <p>Your portfolio is empty.</p>
-            )}
+    <Container fluid>
+      <Row>
+        <Col md={4} className="border-right">
+          <h2>Stock Symbols</h2>
+          {showAlert && (
+            <Alert variant="success">{`${alertSymbol} has been added to your portfolio.`}</Alert>
+          )}
+          <Form.Control
+            type="text"
+            placeholder="Search for a stock..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <ListGroup className="mt-3">
+            {symbols
+              .filter((symbol) =>
+                symbol.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((symbol, index) => (
+                <ListGroup.Item
+                  key={index}
+                  className="d-flex justify-content-between align-items-center"
+                >
+                  {symbol}
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => addToPortfolio(symbol)}
+                  >
+                    Add to Portfolio
+                  </Button>
+                </ListGroup.Item>
+              ))}
           </ListGroup>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
+        </Col>
+        <Col md={8}>
+          <Button
+            variant="info"
+            onClick={() => setShowPortfolio(!showPortfolio)}
+            className="mb-3"
+          >
+            Portfolio View
           </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
+          {showPortfolio && (
+            <>
+              <ListGroup>
+                {portfolio.map((symbol, index) => (
+                  <ListGroup.Item
+                    key={index}
+                    className="d-flex justify-content-between align-items-center"
+                  >
+                    {symbol}
+                    <div className="d-flex align-items-center">
+                      <Form.Control
+                        type="number"
+                        placeholder="Investment Amount ($)"
+                        value={investmentAmounts[symbol] || ""}
+                        onChange={(e) =>
+                          handleInvestmentChange(symbol, e.target.value)
+                        }
+                        style={{ marginRight: "10px", width: "150px" }}
+                      />
+                      Current Price: $
+                      {parseFloat(
+                        portfolioDetails[symbol]?.currentPrice
+                      ).toFixed(2) || "N/A"}
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => setSelectedSymbol(symbol)}
+                      >
+                        View Data
+                      </Button>
+                    </div>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+              <Card className="mt-3">
+                <Card.Body>
+                  <Card.Title>Total Portfolio Value</Card.Title>
+                  <Card.Text>${calculatePortfolioValue().toFixed(2)}</Card.Text>
+                </Card.Body>
+              </Card>
+              {selectedSymbol && <SymbolData symbol={selectedSymbol} />}
+            </>
+          )}
+        </Col>
+      </Row>
+    </Container>
   );
 }
 
