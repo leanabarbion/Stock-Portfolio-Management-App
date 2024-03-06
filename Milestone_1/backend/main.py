@@ -4,12 +4,11 @@ from io import StringIO
 import csv
 from flask_cors import CORS, cross_origin
 
-# 93T39LM1F63A0IH9
 app = Flask(__name__)
 CORS(app)
 
 app.config["CORS_HEADERS"] = "Content-Type"
-YOUR_API_KEY = "93T39LM1F63A0IH9"
+YOUR_API_KEY = "NKH8SNZW8I690AJQ"
 
 CSV_URL = "https://www.alphavantage.co/query"
 

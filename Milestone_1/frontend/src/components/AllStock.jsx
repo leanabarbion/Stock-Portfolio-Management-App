@@ -9,7 +9,7 @@ import {
   Card,
   Form,
 } from "react-bootstrap";
-import SymbolData from "./StockData"; // Adjust the import path as necessary
+import SymbolData from "./StockDetails"; // Adjust the import path as necessary
 
 function StockSymbols() {
   const [symbols, setSymbols] = useState([]);

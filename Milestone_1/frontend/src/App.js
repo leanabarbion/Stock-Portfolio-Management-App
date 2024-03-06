@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container } from 'react-bootstrap';
-import StockSymbols from "./components/StockSymbols";
-import SymbolData from './components/StockData';
+import StockSymbols from "./components/AllStock";
+import SymbolData from './components/StockDetails';
 
 function App() {
   const [selectedSymbol, setSelectedSymbol] = useState(null);
