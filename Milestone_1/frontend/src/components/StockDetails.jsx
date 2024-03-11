@@ -19,7 +19,7 @@ function SymbolData({ symbol }) {
   useEffect(() => {
     // Ensure that the symbol is not null or undefined
     if (symbol) {
-      const url = `${process.env.REACT_APP_API_BASE_URL}/data?symbol=${symbol}`;
+      const url = ` http://127.0.0.1:5000/api/stock/?symbol=${symbol}`;
       axios
         .get(url)
         .then((response) => {

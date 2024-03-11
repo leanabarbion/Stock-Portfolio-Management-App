@@ -23,14 +23,22 @@ function StockSymbols() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/symbols`)
-      .then((response) => response.json())
-      .then((data) => setSymbols(data.symbols))
+    fetch(`http://127.0.0.1:5000/api/all-stocks`)
+      .then((response) => response.text()) // Fetch as text, not JSON
+      .then((csvText) => {
+        // Assuming your CSV has a header and the first column is 'symbol'
+        const rows = csvText.split("\n"); // Split by new line to get rows
+        const symbols = rows.slice(1).map((row) => {
+          const columns = row.split(","); // Split by comma to get columns
+          return columns[0]; // Assuming the symbol is in the first column
+        });
+        setSymbols(symbols.filter(Boolean)); // Set the symbols state, filter out any empty strings
+      })
       .catch((error) => console.error("Error fetching symbols:", error));
   }, []);
 
   const fetchCurrentPrice = (symbol) => {
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/data?symbol=${symbol}`)
+    fetch(`http://127.0.0.1:5000/api/stock/?symbol=${symbol}`)
       .then((response) => response.json())
       .then((data) => {
         const latestData = data.trend_data[data.trend_data.length - 1] || {};
