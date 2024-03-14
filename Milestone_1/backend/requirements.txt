@@ -1,6 +1,0 @@
-Flask==2.2.5
-SQLAlchemy==2.0.16
-requests==2.31.0
-Werkzeug==2.2.2
-Flask-Cors==4.0.0
-oracledb ==2.0.1
