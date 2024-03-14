@@ -1,49 +1,41 @@
+
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Container } from 'react-bootstrap';
-import StockSymbols from "./components/AllStock";
-import SymbolData from './components/StockDetails';
-import AuthView from './components/AuthView';
-import NavBar from './components/Logout'
+import { Container, Button } from 'react-bootstrap';
+import StockList from './components/AllStock'; // Ensure this path is correct
+import Login from './components/AuthView'; // Ensure this path is correct
 
 function App() {
-  const [selectedSymbol, setSelectedSymbol] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   useEffect(() => {
-    fetch(` http://127.0.0.1:5000/api/is-logged-in`)
-      .then(response => response.json())
-      .then(data => setIsLoggedIn(data.logged_in))
-      .catch(error => console.error("Error checking login status:", error));
+    // Check if the user is logged in when the app loads
+    const storedLoginState = localStorage.getItem('isLoggedIn') === 'true';
+    setIsLoggedIn(storedLoginState);
   }, []);
 
-  const handleSelectSymbol = (symbol) => {
-    setSelectedSymbol(symbol);
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem('isLoggedIn', 'true');
+    // Perform any additional actions after login if necessary
   };
-
+  
   const handleLogout = () => {
-    fetch(` http://127.0.0.1:5000/logout`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          setIsLoggedIn(false);
-          setSelectedSymbol(null); // Optionally reset the selected symbol
-        }
-      })
-      .catch(error => console.error("Error logging out:", error));
+    setIsLoggedIn(false);
+    localStorage.setItem('isLoggedIn', 'false');
+    // Optionally reset any other state or perform cleanup
   };
 
   return (
-    <Container className="mt-3">
-      <h1 className="text-center mb-3">WealthWise: Stock Management App</h1>
-      {!isLoggedIn ? (
-        <AuthView onLoginSuccess={() => setIsLoggedIn(true)} />
-      ) : (
+    <Container>
+      <h1>Welcome to Wealthwise</h1>
+      {isLoggedIn ? (
         <>
-        <button onClick={handleLogout} className="btn btn-danger">Logout</button>
-          <StockSymbols onSelectSymbol={handleSelectSymbol} />
-          {selectedSymbol && <SymbolData symbol={selectedSymbol} />}
+          <StockList />
+          <Button variant="danger" onClick={handleLogout}>Logout</Button>
         </>
+      ) : (
+        <Login onLoginSuccess={handleLoginSuccess} />
       )}
     </Container>
   );

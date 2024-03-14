@@ -4,30 +4,41 @@ from io import StringIO
 import csv
 from flask_cors import CORS, cross_origin
 import hashlib
-from models import db, User, Portfolio
+from models import db, Portfolio, Stock, User
 from sqlalchemy.pool import NullPool
 import oracledb
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash
+
 
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 un = "ADMIN"
 pw = "QvcBEs_Mmr5Si4t"
 dsn = "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1521)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g4985bc5c80162f_i8dqu4u6xk44u8p6_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"
-
 pool = oracledb.create_pool(user=un, password=pw, dsn=dsn)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "oracle+oracledb://"
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "oracle+oracledb://ADMIN:QvcBEs_Mmr5Si4t@adb.eu-paris-1.oraclecloud.com:1521/g4985bc5c80162f_i8dqu4u6xk44u8p6_high.adb.oraclecloud.com?ssl_server_dn_match=yes"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = "something very secret"
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "creator": pool.acquire,
+    "poolclass": NullPool,
+}
+app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 
+app.config["SQLALCHEMY_ECHO"] = True
 db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 app.config["CORS_HEADERS"] = "Content-Type"
 YOUR_API_KEY = "NKH8SNZW8I690AJQ"
 CSV_URL = "https://www.alphavantage.co/query"
-
-
-with app.app_context():
-    db.create_all()
 
 
 @app.route("/api/all-stocks")
@@ -47,85 +58,7 @@ def list_symbols():
         return Response(decoded_content, mimetype="text/csv")
 
 
-@app.route("/portfolio")
-@cross_origin()
-def list_portfolio():
-    # Get symbols from query parameter and split into a list
-    symbols = request.args.get("symbols")
-    if not symbols:
-        return jsonify({"error": "No symbols provided"}), 400
-    # symbols = "AAPL,MSFT,GOOGL"
-    symbols_list = symbols.split(",")
-
-    # Initialize an empty list to store stock data
-    results = []
-
-    # Loop over the symbols to fetch their data
-    for symbol in symbols_list:
-        symbol = symbol.strip()
-        response = requests.get(
-            f"{CSV_URL}?function=GLOBAL_QUOTE&symbol={symbol}&apikey={YOUR_API_KEY}"
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-            if "Global Quote" in data:
-                global_quote = data["Global Quote"]
-                results.append(
-                    {
-                        "ticker": global_quote.get("01. symbol"),
-                        "high": global_quote.get("03. high"),
-                        "current": global_quote.get("05. price"),
-                    }
-                )
-            else:
-                results.append({"ticker": symbol, "error": "Data not found"})
-        else:
-            results.append({"ticker": symbol, "error": "Failed to fetch data"})
-
-    # Return the list of stock data as JSON
-    return jsonify(results)
-
-
-@app.route("/api/portfolio/add", methods=["POST"])
-def add_to_portfolio():
-    if "username" not in session:
-        return jsonify({"error": "Not logged in"}), 401
-
-    user = User.query.filter_by(username=session["username"]).first()
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    symbol = request.json.get("symbol")
-    investment_amount = request.json.get("investment_amount", 0)
-
-    new_entry = Portfolio(
-        user_id=user.id, symbol=symbol, investment_amount=investment_amount
-    )
-    db.session.add(new_entry)
-    db.session.commit()
-
-    return jsonify({"message": "Added to portfolio", "symbol": symbol}), 200
-
-
-@app.route("/api/portfolio", methods=["GET"])
-def get_portfolio():
-    if "username" not in session:
-        return jsonify({"error": "Not logged in"}), 401
-
-    user = User.query.filter_by(username=session["username"]).first()
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    portfolio = [
-        {"symbol": entry.symbol, "investment_amount": entry.investment_amount}
-        for entry in user.portfolios
-    ]
-
-    return jsonify(portfolio)
-
-
-@app.route("/api/stock/")
+@app.route("/api/stock-details")
 def stock_data():
     symbol = request.args.get("symbol")
     if not symbol:
@@ -160,78 +93,159 @@ def stock_data():
     return jsonify({"symbol": symbol, "trend_data": trend_data})
 
 
-# Authentication Logic
+# Function to get or create a stock based on its symbol
+def get_or_create_stock(symbol, name=None):
+    """
+    Attempts to find a stock with the given symbol. If found, returns the stock.
+    If not found, creates a new stock with the provided symbol and name, then returns it.
+    """
+    stock = Stock.query.filter_by(symbol=symbol).first()
+    if not stock:
+        stock = Stock(symbol=symbol, name=name)
+        db.session.add(stock)
+        db.session.commit()
+    return stock
 
-app.config["SECRET_KEY"] = "something very secret"
 
-users_database = {
-    "churro": "ab5743ce10dcb8eec8eba72e2aae97f684891786",
-    "gnocchi": "0adbe085fd8eb9a6ace9300130d5d3f6ff0baf22",
-}
+@app.route("/api/add-stock", methods=["POST"])
+@cross_origin()
+def add_stock_portfolio():
+    # Extract stock symbol and name from the request
+    symbol = request.json.get("symbol")
+    name = request.json.get("name")  # Name is optional
+    # investment_amount = request.json.get("investment_amount", 0.0)
 
+    # Ensure the stock exists in the database
+    stock = get_or_create_stock(symbol, name)
 
-@app.route("/api/handle-register", methods=["POST"])
-def handle_register():
-    # Get username and password from the form
-    username = request.form["username"]
-    password = request.form["password"]
+    # Now you can proceed to add the stock to the user's portfolio
+    # This step depends on your application's models and logic
+    # ...
 
-    # Check if username or password is empty
-    if not username or not password:
-        return jsonify({"error": "Username and password cannot be empty"}), 400
-
-    # Hash the password
-    hashed_password = hash_value(password)
-
-    if username in users_database:
-        return jsonify({"error": "Username already exists"}), 409
-    # Register the new user
-    users_database[username] = hashed_password
-    # Automatically log in the user by setting the session
-    session["username"] = username
-    # Respond with a success message
     return (
-        jsonify({"success": "User registered successfully", "username": username}),
+        jsonify({"message": "Stock added to portfolio", "stock": stock.to_dict()}),
         200,
     )
 
 
-def hash_value(string):
-    hash = hashlib.sha1()
-    hash.update(string.encode())
-    return hash.hexdigest()
+@app.route("/api/stocks", methods=["GET"])
+@cross_origin()
+def get_stocks():
+    stocks = Stock.query.all()  # This line fetches all stocks from the database
+    stock_list = [{"symbol": stock.symbol, "name": stock.name} for stock in stocks]
+    return jsonify(stock_list)
 
 
-@app.route("/api/handle-login", methods=["POST"])
-def handle_login():
-    username = request.form["username"]
-    password = request.form["password"]
-    hashed_password = hash_value(password)
+@app.route("/api/delete-stock", methods=["POST"])
+@cross_origin()
+def delete_stock():
+    # Assuming the symbol uniquely identifies the stock
+    symbol = request.json.get("symbol")
 
-    # Check if username or password is empty
-    if not username or not password:
-        return jsonify({"error": "Username and password cannot be empty"}), 400
+    if not symbol:
+        return jsonify({"error": "Symbol is required"}), 400
 
-    if username not in users_database or users_database[username] != hashed_password:
-        # Return an error response instead of redirecting
-        return jsonify({"error": "Invalid username or password"}), 401
-    session["username"] = username
-    return jsonify({"success": True, "username": username})
+    stock = Stock.query.filter_by(symbol=symbol).first()
 
-
-@app.route("/api/is-logged-in", methods=["GET"])
-def is_logged_in():
-    if "username" in session:
-        return jsonify({"logged_in": True, "username": session["username"]})
+    if stock:
+        # If the stock exists, delete it
+        db.session.delete(stock)
+        db.session.commit()
+        return jsonify({"message": f"Stock {symbol} deleted successfully"}), 200
     else:
-        return jsonify({"logged_in": False})
+        return jsonify({"error": "Stock not found"}), 404
 
 
-@app.route("/logout", methods=["GET"])
-def logout():
-    # Remove 'username' from session
-    session.pop("username", None)
-    return jsonify({"success": True, "message": "Logged out successfully"}), 200
+@app.route("/api/login", methods=["POST"])
+@cross_origin()
+def login():
+
+    # Extract username and password from request
+    username = request.json.get("username")
+    password = request.json.get("password")
+
+    # Look for the user in the database
+    user = User.query.filter_by(username=username).first()
+
+    # If user exists and passwords match
+    if user and user.password_hash == password:
+        # Login success logic here
+        # For example, setting the user ID in the session
+        session["username"] = username
+        session["user_id"] = user.id
+
+        return jsonify({"message": "Login successful", "username": username}), 200
+    else:
+        return jsonify({"error": "Invalid username or password"}), 401
+
+
+@app.route("/api/add-stock-to-user-portfolio", methods=["POST"])
+def add_stock_to_user_portfolio():
+    if "user_id" not in session:
+        return jsonify({"error": "User not logged in"}), 403
+
+    user_id = session["user_id"]
+    symbol = request.json.get("symbol")
+    investment_amount = request.json.get("investment_amount", 0.0)
+
+    if not symbol or investment_amount <= 0:
+        return jsonify({"error": "Invalid input"}), 400
+
+    stock = get_or_create_stock(symbol)
+    if not stock:
+        return jsonify({"error": "Stock could not be processed"}), 500
+
+    existing_entry = Portfolio.query.filter_by(
+        user_id=user_id, stock_id=stock.id
+    ).first()
+    if existing_entry:
+        # Update investment amount
+        existing_entry.investment_amount += investment_amount
+        db.session.commit()
+        return (
+            jsonify(
+                {
+                    "message": "Investment amount updated for existing stock",
+                    "portfolio_entry": existing_entry.to_dict(),
+                }
+            ),
+            200,
+        )
+
+    new_entry = Portfolio(
+        user_id=user_id, stock_id=stock.id, investment_amount=investment_amount
+    )
+    db.session.add(new_entry)
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "message": "Stock added to portfolio",
+                "portfolio_entry": new_entry.to_dict(),
+            }
+        ),
+        201,
+    )
+
+
+@app.route("/api/remove-stock-from-portfolio/<int:stock_id>", methods=["DELETE"])
+@cross_origin()
+def remove_stock_from_portfolio(stock_id):
+    if "user_id" not in session:
+        return jsonify({"error": "User not logged in"}), 403
+
+    user_id = session["user_id"]
+    portfolio_entry = Portfolio.query.filter_by(
+        user_id=user_id, stock_id=stock_id
+    ).first()
+
+    if portfolio_entry:
+        db.session.delete(portfolio_entry)
+        db.session.commit()
+        return jsonify({"message": "Stock removed from portfolio"}), 200
+    else:
+        return jsonify({"error": "Stock not found in portfolio"}), 404
 
 
 if __name__ == "__main__":

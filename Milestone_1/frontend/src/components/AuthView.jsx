@@ -1,97 +1,74 @@
 import React, { useState } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
+import {
+  Button,
+  Form,
+  FormGroup,
+  FormControl,
+  FormLabel,
+  Alert,
+} from "react-bootstrap";
 
-function AuthView({ onLoginSuccess }) {
+function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    fetch(` http://127.0.0.1:5000/api/handle-login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `username=${encodeURIComponent(
-        username
-      )}&password=${encodeURIComponent(password)}`,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          onLoginSuccess();
-        } else {
-          setErrorMessage(data.error || "Failed to login");
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        setErrorMessage("Failed to login");
-      });
-  };
 
-  const handleRegister = (e) => {
-    e.preventDefault();
-    fetch(` http://127.0.0.1:5000/api/handle-register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `username=${encodeURIComponent(
-        username
-      )}&password=${encodeURIComponent(password)}`,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          onLoginSuccess();
-        } else {
-          setErrorMessage(data.error || "Failed to register");
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        setErrorMessage("Failed to register");
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+        // Assuming credentials are handled securely on the backend
       });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Assuming the backend correctly creates a session and/or returns a relevant response
+        onLoginSuccess(); // Signal parent component that login was successful
+      } else {
+        setError(data.error || "Invalid username or password");
+      }
+    } catch (error) {
+      console.log(error);
+      setError("Failed to connect to the server.");
+    }
   };
 
   return (
     <div>
-      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-      <Form onSubmit={isRegistering ? handleRegister : handleLogin}>
-        <Form.Group controlId="formBasicEmail">
-          <Form.Label>Username</Form.Label>
-          <Form.Control
+      <h2>Login</h2>
+      <Form onSubmit={handleLogin}>
+        <FormGroup>
+          <FormLabel htmlFor="username">Username:</FormLabel>
+          <FormControl
             type="text"
-            placeholder="Enter username"
+            id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
-        </Form.Group>
-
-        <Form.Group controlId="formBasicPassword">
-          <Form.Label>Password</Form.Label>
-          <Form.Control
+        </FormGroup>
+        <FormGroup>
+          <FormLabel htmlFor="password">Password:</FormLabel>
+          <FormControl
             type="password"
-            placeholder="Password"
+            id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-        </Form.Group>
-
+        </FormGroup>
         <Button variant="primary" type="submit">
-          {isRegistering ? "Register" : "Login"}
+          Login
         </Button>
-        <Button variant="link" onClick={() => setIsRegistering(!isRegistering)}>
-          {isRegistering
-            ? "Already have an account? Login"
-            : "Don't have an account? Register"}
-        </Button>
+        {error && <Alert variant="danger">{error}</Alert>}
       </Form>
     </div>
   );
 }
 
-export default AuthView;
+export default Login;
