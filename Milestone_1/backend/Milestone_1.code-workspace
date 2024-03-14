@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../Milestone_0"
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"apikey",
+			"jsonify"
+		]
+	}
+}
