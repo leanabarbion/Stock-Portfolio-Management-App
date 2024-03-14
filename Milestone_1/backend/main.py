@@ -40,6 +40,7 @@ YOUR_API_KEY = "NKH8SNZW8I690AJQ"
 CSV_URL = "https://www.alphavantage.co/query"
 
 
+# Fetches a CSV list of all stock symbols using the Alphavantage API and returns it.
 @app.route("/api/all-stocks")
 @cross_origin()
 def list_symbols():
@@ -57,6 +58,7 @@ def list_symbols():
         return Response(decoded_content, mimetype="text/csv")
 
 
+# Retrieves weekly trend data for a specific stock symbol from the Alphavantage API and returns it in JSON format.
 @app.route("/api/stock-details")
 def stock_data():
     symbol = request.args.get("symbol")
@@ -106,6 +108,7 @@ def get_or_create_stock(symbol, name=None):
     return stock
 
 
+# Adds a stock (by symbol) to the database if it doesn't already exist, and potentially to a user's portfolio. This endpoint just ensures the stock exists in the database.
 @app.route("/api/add-stock", methods=["POST"])
 @cross_origin()
 def add_stock_portfolio():
@@ -127,6 +130,7 @@ def add_stock_portfolio():
     )
 
 
+# Returns a list of all stocks currently stored in the database.
 @app.route("/api/stocks", methods=["GET"])
 @cross_origin()
 def get_stocks():
@@ -135,6 +139,7 @@ def get_stocks():
     return jsonify(stock_list)
 
 
+# Deletes a specific stock from the database based on the provided symbol.
 @app.route("/api/delete-stock", methods=["POST"])
 @cross_origin()
 def delete_stock():
@@ -155,6 +160,7 @@ def delete_stock():
         return jsonify({"error": "Stock not found"}), 404
 
 
+# Authenticates a user based on the provided username and password, and establishes a session if successful.
 @app.route("/api/login", methods=["POST"])
 @cross_origin()
 def login():
@@ -176,75 +182,6 @@ def login():
         return jsonify({"message": "Login successful", "username": username}), 200
     else:
         return jsonify({"error": "Invalid username or password"}), 401
-
-
-@app.route("/api/add-stock-to-user-portfolio", methods=["POST"])
-def add_stock_to_user_portfolio():
-    if "user_id" not in session:
-        return jsonify({"error": "User not logged in"}), 403
-
-    user_id = session["user_id"]
-    symbol = request.json.get("symbol")
-    investment_amount = request.json.get("investment_amount", 0.0)
-
-    if not symbol or investment_amount <= 0:
-        return jsonify({"error": "Invalid input"}), 400
-
-    stock = get_or_create_stock(symbol)
-    if not stock:
-        return jsonify({"error": "Stock could not be processed"}), 500
-
-    existing_entry = Portfolio.query.filter_by(
-        user_id=user_id, stock_id=stock.id
-    ).first()
-    if existing_entry:
-        # Update investment amount
-        existing_entry.investment_amount += investment_amount
-        db.session.commit()
-        return (
-            jsonify(
-                {
-                    "message": "Investment amount updated for existing stock",
-                    "portfolio_entry": existing_entry.to_dict(),
-                }
-            ),
-            200,
-        )
-
-    new_entry = Portfolio(
-        user_id=user_id, stock_id=stock.id, investment_amount=investment_amount
-    )
-    db.session.add(new_entry)
-    db.session.commit()
-
-    return (
-        jsonify(
-            {
-                "message": "Stock added to portfolio",
-                "portfolio_entry": new_entry.to_dict(),
-            }
-        ),
-        201,
-    )
-
-
-@app.route("/api/remove-stock-from-portfolio/<int:stock_id>", methods=["DELETE"])
-@cross_origin()
-def remove_stock_from_portfolio(stock_id):
-    if "user_id" not in session:
-        return jsonify({"error": "User not logged in"}), 403
-
-    user_id = session["user_id"]
-    portfolio_entry = Portfolio.query.filter_by(
-        user_id=user_id, stock_id=stock_id
-    ).first()
-
-    if portfolio_entry:
-        db.session.delete(portfolio_entry)
-        db.session.commit()
-        return jsonify({"message": "Stock removed from portfolio"}), 200
-    else:
-        return jsonify({"error": "Stock not found in portfolio"}), 404
 
 
 if __name__ == "__main__":
