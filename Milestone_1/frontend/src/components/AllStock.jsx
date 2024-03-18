@@ -7,13 +7,12 @@ function StockList() {
   const [stocks, setStocks] = useState([]);
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
-  const [investmentAmounts, setInvestmentAmounts] = useState("");
+  const [investmentAmount, setInvestmentAmount] = useState("");
   const [portfolio, setPortfolio] = useState([]);
   const [selectedSymbol, setSelectedSymbol] = useState(null);
-  const [portfolioDetails, setPortfolioDetails] = useState({});
 
   const fetchStocks = () => {
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/stocks`)
+    fetch("http://127.0.0.1:5000/api/all-stocks")
       .then((response) => response.json())
       .then((data) => setStocks(data))
       .catch((error) => console.error("Failed to fetch stocks:", error));
@@ -27,7 +26,7 @@ function StockList() {
   // Function to add a new stock
   const addStock = (e) => {
     e.preventDefault();
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/add-stock`, {
+    fetch("http://127.0.0.1:5000/api/add-stock", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,7 +46,7 @@ function StockList() {
   };
 
   const deleteStock = (symbolToDelete) => {
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/delete-stock`, {
+    fetch("http://127.0.0.1:5000/api/delete-stock", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,41 +69,6 @@ function StockList() {
   };
   const handleSymbolSelect = (symbol) => {
     setSelectedSymbol(symbol); // Update the selectedSymbol state when a symbol is clicked
-  };
-
-  const fetchCurrentPrice = (symbol) => {
-    // Assuming you have an API that returns the current price for a given symbol
-    // Replace the URL with your actual API endpoint
-    fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/api/stock-details?symbol=${symbol}`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        const currentPrice = data.currentPrice || "N/A";
-        setPortfolioDetails((prevDetails) => ({
-          ...prevDetails,
-          [symbol]: { ...prevDetails[symbol], currentPrice },
-        }));
-      })
-      .catch((error) =>
-        console.error("Error fetching current price for symbol:", symbol, error)
-      );
-  };
-
-  const handleInvestmentChange = (symbol, amount) => {
-    setInvestmentAmounts({
-      ...investmentAmounts,
-      [symbol]: amount,
-    });
-  };
-
-  const calculatePortfolioValue = () => {
-    return Object.keys(investmentAmounts).reduce((total, symbol) => {
-      const amountInvested = parseFloat(investmentAmounts[symbol]) || 0;
-      const currentPrice =
-        parseFloat(portfolioDetails[symbol]?.currentPrice) || 0;
-      return total + amountInvested * currentPrice;
-    }, 0);
   };
 
   return (

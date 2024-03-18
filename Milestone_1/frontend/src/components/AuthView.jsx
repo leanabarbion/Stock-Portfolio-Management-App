@@ -12,22 +12,21 @@ function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoginView, setIsLoginView] = useState(true);
+  const toggleView = () => setIsLoginView(!isLoginView);
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, password }),
-          // Assuming credentials are handled securely on the backend
-        }
-      );
+      const response = await fetch(`http://127.0.0.1:5000/api/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: "include",
+      });
 
       const data = await response.json();
 
@@ -43,10 +42,40 @@ function Login({ onLoginSuccess }) {
     }
   };
 
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/api/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }), // Include email for sign-up
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsLoginView(true); // Switch to login view
+        setError(""); // Clear any existing errors
+        // Optionally, set a success message or state to inform the user that they can now log in
+        // For demonstration, we're using setError, but you might use a different state or method
+        setError("Sign up successful. Please log in.");
+      } else {
+        setError(data.error || "Failed to sign up.");
+      }
+    } catch (error) {
+      console.error(error);
+      setError("Failed to connect to the server.");
+    }
+  };
+
   return (
     <div>
-      <h2>Login</h2>
-      <Form onSubmit={handleLogin}>
+      <h2>{isLoginView ? "Login" : "Sign Up"}</h2>
+      <Form onSubmit={isLoginView ? handleLogin : handleSignUp}>
         <FormGroup>
           <FormLabel htmlFor="username">Username:</FormLabel>
           <FormControl
@@ -66,7 +95,10 @@ function Login({ onLoginSuccess }) {
           />
         </FormGroup>
         <Button variant="primary" type="submit">
-          Login
+          {isLoginView ? "Login" : "Sign Up"}
+        </Button>
+        <Button variant="link" onClick={toggleView}>
+          {isLoginView ? "Need an account? Sign Up" : "Have an account? Login"}
         </Button>
         {error && <Alert variant="danger">{error}</Alert>}
       </Form>

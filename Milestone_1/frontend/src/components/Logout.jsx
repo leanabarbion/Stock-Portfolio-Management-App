@@ -1,12 +1,22 @@
-// In a new NavBar.js or similar file
-function NavBar({ onLogout }) {
+function LogoutButton({ onLogout }) {
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/api/logout`, {
+        method: "POST", // Adjust according to your backend implementation
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        onLogout(); // Handle any cleanup or state updates needed on logout
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
+
   return (
-    <nav className="navbar navbar-light bg-light">
-      <span className="navbar-brand mb-0 h1">WealthWise</span>
-      <button onClick={onLogout} className="btn btn-danger">
-        Logout
-      </button>
-    </nav>
+    <Button onClick={handleLogout} variant="secondary">
+      Logout
+    </Button>
   );
 }
-export default NavBar;
