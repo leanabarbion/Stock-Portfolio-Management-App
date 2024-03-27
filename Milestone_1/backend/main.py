@@ -204,6 +204,7 @@ def quote_price(symbol):
 def portfolio():
     # Ensure the user is authenticated
     user_id = session.get("user_id")
+    app.logger.info(f"Fetching portfolio for user_id: {user_id}")  # Debugging line
     if not user_id:
         return jsonify({"error": "Authentication required"}), 401
 
@@ -235,6 +236,8 @@ def portfolio():
             }
             for stock in portfolio_stocks
         ]
+        # Log the fetched portfolio data for debugging
+        app.logger.info(f"Fetched portfolio for user_id: {user_id}: {portfolio_data}")
 
         return jsonify(portfolio_data)
     except SQLAlchemyError as e:

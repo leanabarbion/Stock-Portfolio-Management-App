@@ -4,17 +4,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Button } from 'react-bootstrap';
 import StockList from './components/AllStock'; // Ensure this path is correct
 import Login from './components/AuthView'; // Ensure this path is correct
+import Portfolio from './components/Portfolio';
 
 
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
 
-  useEffect(() => {
-    // Check if the user is logged in when the app loads
-    const storedLoginState = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(storedLoginState);
-  }, []);
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
@@ -49,18 +45,14 @@ function App() {
             });
             const data = await response.json();
             setIsLoggedIn(data.isLoggedIn);
-            if (data.isLoggedIn) {
-                localStorage.setItem('isLoggedIn', 'true');
-            } else {
-                localStorage.removeItem('isLoggedIn');
-            }
+            localStorage.setItem('isLoggedIn', data.isLoggedIn ? 'true' : 'false');
         } catch (error) {
             console.error("Error checking login status", error);
         }
     };
 
     checkLoginStatus();
-}, []);
+  }, []);
 
 
   return (
@@ -69,6 +61,7 @@ function App() {
       {isLoggedIn ? (
         <>
           <StockList />
+          <Portfolio isLoggedIn={isLoggedIn} />
           <Button variant="danger" onClick={handleLogout}>Logout</Button>
         </>
       ) : (

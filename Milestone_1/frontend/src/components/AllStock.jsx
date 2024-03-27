@@ -7,8 +7,6 @@ function StockList() {
   const [stocks, setStocks] = useState([]);
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
-  const [investmentAmount, setInvestmentAmount] = useState("");
-  const [portfolio, setPortfolio] = useState([]);
   const [selectedSymbol, setSelectedSymbol] = useState(null);
 
   const fetchStocks = () => {
