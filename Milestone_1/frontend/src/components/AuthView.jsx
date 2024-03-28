@@ -19,14 +19,17 @@ function Login({ onLoginSuccess }) {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
+          credentials: "include",
+        }
+      );
 
       const data = await response.json();
 
@@ -46,14 +49,17 @@ function Login({ onLoginSuccess }) {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }), // Include email for sign-up
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }), // Include email for sign-up
+          credentials: "include",
+        }
+      );
 
       const data = await response.json();
 

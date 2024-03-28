@@ -21,8 +21,8 @@ bcrypt = Bcrypt()
 CORS(
     app,
     supports_credentials=True,
-    resources={r"*": {"origins": "http://localhost:3000"}},
 )
+
 un = "ADMIN"
 pw = "QvcBEs_Mmr5Si4t"
 dsn = "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1521)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g4985bc5c80162f_i8dqu4u6xk44u8p6_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"
@@ -161,17 +161,21 @@ def quote_price(symbol):
 @app.route("/api/all-stocks", methods=["GET"])
 @cross_origin()
 def get_stocks():
-    stocks = Stock.query.all()  # This line fetches all stocks from the database
-    stock_list = []
-    for stock in stocks:
-        quote_price = quote_price(stock.symbol)  # Fetch the quote price for each stock
-        stock_info = {
-            "symbol": stock.symbol,
-            "name": stock.name,
-            "price": quote_price if quote_price is not None else "Unavailable",
-        }
-        stock_list.append(stock_info)
-    return jsonify(stock_list)
+    try:
+        stocks = Stock.query.all()  # This line fetches all stocks from the database
+        stock_list = []
+        for stock in stocks:
+            price = quote_price(stock.symbol)  # Fetch the quote price for each stock
+            stock_info = {
+                "symbol": stock.symbol,
+                "name": stock.name,
+                "price": price if price is not None else "Unavailable",
+            }
+            stock_list.append(stock_info)
+        return jsonify(stock_list)
+    except Exception as e:
+        app.logger.error(f"Failed to fetch stocks: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # Deletes a specific stock from the database based on the provided symbol.

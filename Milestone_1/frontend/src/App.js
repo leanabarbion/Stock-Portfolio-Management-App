@@ -20,7 +20,7 @@ function App() {
   const handleLogout = async () => {
     // Here you would call your backend to destroy the session
     try {
-      const response = await fetch(`http://127.0.0.1:5000/api/logout`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/logout`, {
         method: "POST",
         credentials: "include", // To ensure cookies are included
       });
@@ -39,7 +39,7 @@ function App() {
   useEffect(() => {
     const checkLoginStatus = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:5000/api/session-check`, {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/session-check`, {
                 credentials: 'include', // Important for including cookies
             });
             const data = await response.json();
