@@ -121,9 +121,9 @@ def stock_data(symbol):
 
 
 # Adds a stock (by symbol) to the database if it doesn't already exist, and potentially to a user's portfolio. This endpoint just ensures the stock exists in the database.
-@app.route("/api/add-stock", methods=["POST"])
+@app.route("/api/portfolio/add", methods=["POST"])
 @cross_origin()
-def add_stock():
+def portfolio_add():
     # Extract stock symbol and name from the request
     symbol = request.json.get("symbol")
     name = request.json.get("name")
@@ -141,7 +141,7 @@ def add_stock():
 
 
 # Utility function to fetch the quote price for a stock symbol
-def get_stock_price(symbol):
+def quote_price(symbol):
     # You need to have YOUR_API_KEY defined somewhere in your settings
     url = f"{CSV_URL}?function=GLOBAL_QUOTE&symbol={symbol}&apikey={YOUR_API_KEY}"
     try:
@@ -164,9 +164,7 @@ def get_stocks():
     stocks = Stock.query.all()  # This line fetches all stocks from the database
     stock_list = []
     for stock in stocks:
-        quote_price = get_stock_price(
-            stock.symbol
-        )  # Fetch the quote price for each stock
+        quote_price = quote_price(stock.symbol)  # Fetch the quote price for each stock
         stock_info = {
             "symbol": stock.symbol,
             "name": stock.name,
@@ -177,9 +175,9 @@ def get_stocks():
 
 
 # Deletes a specific stock from the database based on the provided symbol.
-@app.route("/api/delete-stock", methods=["POST"])
+@app.route("/api/portfolio/remove", methods=["POST"])
 @cross_origin()
-def delete_stock():
+def portfolio_remove():
     # Assuming the symbol uniquely identifies the stock
     symbol = request.json.get("symbol")
 

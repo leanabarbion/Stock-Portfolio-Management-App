@@ -11,7 +11,6 @@ function StockList() {
   const [quantities, setQuantities] = useState(
     JSON.parse(localStorage.getItem("quantities")) || {}
   );
-  const [totalValue, setTotalValue] = useState(0);
 
   const fetchStocks = () => {
     fetch("http://127.0.0.1:5000/api/all-stocks")
@@ -46,7 +45,7 @@ function StockList() {
   // Function to add a new stock
   const addStock = (e) => {
     e.preventDefault();
-    fetch("http://127.0.0.1:5000/api/add-stock", {
+    fetch("http://127.0.0.1:5000/api/api/portfolio/add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -71,7 +70,7 @@ function StockList() {
   };
 
   const deleteStock = (symbolToDelete) => {
-    fetch("http://127.0.0.1:5000/api/delete-stock", {
+    fetch("http://127.0.0.1:5000/api/portfolio/remove", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
