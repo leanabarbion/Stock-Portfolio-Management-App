@@ -35,6 +35,9 @@ function SymbolData({ symbol }) {
         });
     }
   }, [symbol]); // Depend on the symbol prop to re-fetch data when it changes
+  // Calculate Min and Max for Y-axis dynamically
+  const minYValue = Math.min(...trendData.map((data) => data.close));
+  const maxYValue = Math.max(...trendData.map((data) => data.close));
 
   return (
     <div
@@ -56,7 +59,7 @@ function SymbolData({ symbol }) {
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis domain={[0, 300]} />
+              <YAxis domain={[minYValue, maxYValue]} />
               <Tooltip />
               <Line
                 type="monotone"

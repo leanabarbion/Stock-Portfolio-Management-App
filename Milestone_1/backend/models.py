@@ -6,7 +6,7 @@ from sqlalchemy.schema import FetchedValue
 db = SQLAlchemy()
 
 
-class User(db.Model):
+class Users(db.Model):
     __tablename__ = "users"
     user_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -16,7 +16,7 @@ class User(db.Model):
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
     # Relationship to Portfolio
-    portfolios = db.relationship("Portfolio", backref="user", lazy=True)
+    portfolios = db.relationship("Portfolio", backref="users", lazy=True)
 
 
 class Stock(db.Model):

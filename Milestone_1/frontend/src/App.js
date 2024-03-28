@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Button } from 'react-bootstrap';
-import StockList from './components/AllStock'; // Ensure this path is correct
-import Login from './components/AuthView'; // Ensure this path is correct
-import Portfolio from './components/Portfolio';
+import StockList from './components/AllStock'; 
+import Login from './components/AuthView'; 
 
 
 
@@ -53,16 +52,19 @@ function App() {
 
     checkLoginStatus();
   }, []);
-
-
   return (
-    <Container>
+    <Container className="position-relative" style={{ minHeight: '100vh' }}>
       <h1>Welcome to Wealthwise</h1>
       {isLoggedIn ? (
         <>
           <StockList />
-          <Portfolio isLoggedIn={isLoggedIn} />
-          <Button variant="danger" onClick={handleLogout}>Logout</Button>
+          <Button
+            variant="danger"
+            onClick={handleLogout}
+            style={{ position: 'absolute', top: 0, right: 0, margin: '10px' }}
+          >
+            Logout
+          </Button>
         </>
       ) : (
         <Login onLoginSuccess={handleLoginSuccess} />
